@@ -12,7 +12,7 @@ import plotly.graph_objects as go
 warnings.filterwarnings("ignore")
 
 # ============================================================
-# KONFIGURASI
+# CONFIGURATION
 # ============================================================
 st.set_page_config(
     page_title="TB Risk Prediction & Explainable AI",
@@ -35,7 +35,7 @@ FEATURES = [
     "History_of_Contact",
 ]
 
-# Hasil penelitian dari notebook TB fix(1).html
+# Research results from notebook TB fix(1).html
 METRICS = {
     "Accuracy": 0.9822,
     "Precision": 0.9194,
@@ -253,7 +253,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Struktur folder yang digunakan:
+# Folder structure:
 # TB_Dashboard/
 # ├── dashboard.py
 # └── model/
@@ -263,9 +263,9 @@ st.markdown(
 # ============================================================
 # MODEL LOADER
 # ============================================================
-# File model penelitian
-# Menggunakan lokasi file dashboard.py agar path tidak bergantung
-# pada folder tempat perintah "streamlit run" dijalankan.
+# Research model file
+# Use the dashboard.py location so the path does not depend
+# on the folder from which the "streamlit run" command is executed.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
 
@@ -275,14 +275,14 @@ IMPUTER_PATH = os.path.join(MODEL_DIR, "TB_Imputer.pkl")
 
 @st.cache_resource
 def load_model():
-    """Memuat model Random Forest dengan joblib, lalu pickle sebagai fallback."""
+    """Load the Random Forest model using joblib, with pickle as a fallback."""
     if not os.path.isfile(MODEL_PATH):
         return None, MODEL_PATH
 
     errors = []
 
-    # Prioritas joblib karena model penelitian biasanya disimpan
-    # menggunakan joblib.dump().
+    # Prefer joblib because the research model is usually saved
+    # using joblib.dump().
     try:
         loaded = joblib.load(MODEL_PATH)
         estimator = getattr(loaded, "best_estimator_", loaded)
@@ -290,7 +290,7 @@ def load_model():
     except Exception as exc:
         errors.append(f"joblib: {exc}")
 
-    # Fallback jika file memang dibuat menggunakan pickle.dump().
+    # Fallback if the file was created using pickle.dump().
     try:
         with open(MODEL_PATH, "rb") as f:
             loaded = pickle.load(f)
@@ -300,21 +300,21 @@ def load_model():
         errors.append(f"pickle: {exc}")
 
     st.error(
-        "Gagal memuat model. File ditemukan, tetapi tidak dapat "
-        "dideserialisasi.\n\n"
+        "Failed to load the model. The file was found, but it could not be "
+        "deserialized.\n\n"
         + "\n".join(errors)
     )
     st.caption(
-        "Jika muncul 'STACK_GLOBAL requires str', kemungkinan file PKL "
-        "dibuat dengan environment/library berbeda atau file model "
-        "rusak. Model perlu disimpan ulang menggunakan joblib.dump()."
+        "If 'STACK_GLOBAL requires str' appears, the PKL file may have been "
+        "created with a different environment/library or the model file may be "
+        "corrupted. The model needs to be re-saved using joblib.dump()."
     )
     return None, MODEL_PATH
 
 
 @st.cache_resource
 def load_imputer():
-    """Memuat imputer penelitian dengan joblib, lalu pickle sebagai fallback."""
+    """Load the research imputer using joblib, with pickle as a fallback."""
     if not os.path.isfile(IMPUTER_PATH):
         return None
 
@@ -332,8 +332,8 @@ def load_imputer():
         errors.append(f"pickle: {exc}")
 
     st.error(
-        "Gagal memuat imputer. File ditemukan, tetapi tidak dapat "
-        "dideserialisasi.\n\n"
+        "Failed to load the imputer. The file was found, but it could not be "
+        "deserialized.\n\n"
         + "\n".join(errors)
     )
     return None
@@ -342,7 +342,7 @@ def load_imputer():
 model, model_path = load_model()
 imputer = load_imputer()
 
-# Informasi diagnostik untuk memastikan file yang digunakan dashboard.
+# Diagnostic information to verify the files used by the dashboard.
 if model is not None:
     try:
         MODEL_TYPE = type(model).__name__
@@ -352,19 +352,19 @@ else:
     MODEL_TYPE = None
 
 # ============================================================
-# HELPER
+# HELPERS
 # ============================================================
 def clean_feature_name(name):
     return str(name).strip()
 
 
 def prepare_input(values):
-    """Membuat DataFrame dengan urutan fitur penelitian."""
+    """Create a DataFrame using the research feature order."""
     df = pd.DataFrame([values])
     df = df[FEATURES].copy()
 
-    # Bila imputer tersedia, gunakan imputer penelitian.
-    # Input dashboard normalnya lengkap, sehingga tidak ada nilai kosong.
+    # If the imputer is available, use the research imputer.
+    # Dashboard inputs are normally complete, so there should be no missing values.
     if imputer is not None:
         try:
             df = pd.DataFrame(
@@ -373,11 +373,11 @@ def prepare_input(values):
                 index=df.index,
             )
         except Exception:
-            # Jika imputer mengharapkan kolom/nama berbeda, input lengkap
-            # tetap dapat diteruskan ke model.
+            # If the imputer expects different columns/names, the complete input
+            # can still be passed to the model.
             pass
 
-    # Sesuaikan nama kolom dengan feature_names_in_ model jika tersedia.
+    # Match column names with the model's feature_names_in_ if available.
     if hasattr(model, "feature_names_in_"):
         model_names = list(model.feature_names_in_)
         stripped = [clean_feature_name(x) for x in model_names]
@@ -404,7 +404,7 @@ def predict_probability(input_df):
 
 
 def get_tree_estimator():
-    """Mengambil estimator Random Forest untuk TreeExplainer."""
+    """Get the Random Forest estimator for TreeExplainer."""
     if model is None:
         return None
 
@@ -426,7 +426,7 @@ def get_tree_estimator():
 def calculate_individual_shap(input_df):
     """
     Menghitung SHAP untuk satu observasi.
-    Kompatibel dengan beberapa format output SHAP untuk classifier.
+    Compatible with several SHAP output formats for classifiers.
     """
     try:
         import shap
@@ -475,7 +475,7 @@ def calculate_individual_shap(input_df):
         return result, base_value
 
     except Exception as exc:
-        st.warning(f"SHAP individual tidak dapat dihitung: {exc}")
+        st.warning(f"Individual SHAP values could not be calculated: {exc}")
         return None, None
 
 
@@ -504,8 +504,8 @@ st.markdown(
     <div class="hero">
         <h1>🫁 TB Risk Prediction & Explainable AI</h1>
         <p>
-            Prediksi risiko Tuberkulosis menggunakan Random Forest
-            dengan pendekatan Explainable AI (SHAP).
+            Tuberculosis risk prediction using Random Forest
+            with an Explainable AI (SHAP) approach.
         </p>
     </div>
     """,
@@ -516,71 +516,71 @@ st.markdown(
 # SIDEBAR
 # ============================================================
 with st.sidebar:
-    st.markdown("## ⚙️ Status Model")
+    st.markdown("## ⚙️ Model Status")
 
     if model is not None:
-        st.success("Model berhasil dimuat")
+        st.success("Model loaded successfully")
         st.caption(f"File: `{model_path}`")
-        st.caption(f"Tipe model: `{MODEL_TYPE}`")
+        st.caption(f"Model type: `{MODEL_TYPE}`")
     else:
-        st.error("Model belum dapat dimuat")
+        st.error("Model could not be loaded")
         if os.path.isfile(model_path):
             st.caption(
-                "File model ditemukan, tetapi gagal dibaca. "
-                "Lihat pesan error di atas."
+                "The model file was found, but could not be read. "
+                "See the error message above."
             )
         else:
             st.caption(
-                f"File tidak ditemukan: `{model_path}`"
+                f"File not found: `{model_path}`"
             )
 
     if imputer is not None:
-        st.success("Imputer berhasil dimuat")
+        st.success("Imputer loaded successfully")
         st.caption(f"File: `{IMPUTER_PATH}`")
     else:
-        st.warning("Imputer belum dapat dimuat")
+        st.warning("Imputer could not be loaded")
         if os.path.isfile(IMPUTER_PATH):
-            st.caption("File imputer ditemukan, tetapi gagal dibaca.")
+            st.caption("The imputer file was found, but could not be read.")
         else:
-            st.caption(f"File tidak ditemukan: `{IMPUTER_PATH}`")
+            st.caption(f"File not found: `{IMPUTER_PATH}`")
 
     st.markdown("---")
-    st.markdown("### Model penelitian")
+    st.markdown("### Research Model")
     st.write("**Random Forest + SHAP**")
-    st.write("Data penelitian: **1.500 observasi**")
-    st.write("Fitur prediktor: **11 variabel**")
+    st.write("Research data: **1,500 observations**")
+    st.write("Predictor features: **11 variables**")
     st.write("Target: **Status_TB**")
 
     st.markdown("---")
     st.caption(
-        "Dashboard ini merupakan alat bantu analisis berbasis model "
-        "penelitian dan bukan pengganti diagnosis medis."
+        "This dashboard is a model-based analytical tool "
+        "and is not a substitute for medical diagnosis."
     )
 
 # ============================================================
 # TABS
 # ============================================================
 tab_pred, tab_model, tab_shap = st.tabs([
-    "🔮 Prediksi Risiko TB",
-    "📊 Analisis Model",
-    "🧠 Faktor Dominan",
+    "🔮 TB Risk Prediction",
+    "📊 Model Analysis",
+    "🧠 Dominant Factors",
 ])
 
 # ============================================================
-# TAB 1 - PREDIKSI
+# TAB 1 - PREDICTION
 # ============================================================
 with tab_pred:
-    st.markdown("### Masukkan karakteristik individu")
+    st.markdown("### Enter Individual Characteristics")
     st.caption(
-        "Ubah nilai input. Hasil probabilitas dan SHAP individual "
-        "akan diperbarui secara otomatis."
+        "Change the input values. The probability and individual SHAP results "
+        "will be updated automatically."
     )
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
         age = st.number_input(
-            "Usia",
+            "Age",
             min_value=1,
             max_value=120,
             value=35,
@@ -589,13 +589,13 @@ with tab_pred:
 
         gender_label = st.selectbox(
             "Gender",
-            ["Laki-laki", "Perempuan"],
+            ["Male", "Female"],
             index=0,
         )
         gender = 1 if gender_label == "Laki-laki" else 0
 
         distance = st.number_input(
-            "Jarak ke Klinik",
+            "Distance to Clinic",
             min_value=0.0,
             max_value=200.0,
             value=5.0,
@@ -603,7 +603,7 @@ with tab_pred:
         )
 
         temperature = st.number_input(
-            "Suhu Lingkungan",
+            "Ambient Temperature",
             min_value=0.0,
             max_value=60.0,
             value=24.0,
@@ -612,14 +612,14 @@ with tab_pred:
 
     with c2:
         ventilation_label = st.selectbox(
-            "Ventilasi",
-            ["Tidak memadai (0)", "Memadai (1)"],
+            "Ventilation",
+            ["Inadequate (0)", "Adequate (1)"],
             index=1,
         )
-        ventilation = 1 if ventilation_label.startswith("Memadai") else 0
+        ventilation = 1 if ventilation_label.startswith("Adequate") else 0
 
         symptom_duration = st.number_input(
-            "Durasi Gejala",
+            "Symptom Duration",
             min_value=0.0,
             max_value=365.0,
             value=7.0,
@@ -627,40 +627,40 @@ with tab_pred:
         )
 
         productive_cough_label = st.selectbox(
-            "Batuk Berdahak",
-            ["Tidak (0)", "Ya (1)"],
+            "Productive Cough",
+            ["No (0)", "Yes (1)"],
             index=0,
         )
-        productive_cough = 1 if productive_cough_label.startswith("Ya") else 0
+        productive_cough = 1 if productive_cough_label.startswith("Yes") else 0
 
         dyspnea_label = st.selectbox(
-            "Sesak Napas",
-            ["Tidak (0)", "Ya (1)"],
+            "Shortness of Breath",
+            ["No (0)", "Yes (1)"],
             index=0,
         )
-        dyspnea = 1 if dyspnea_label.startswith("Ya") else 0
+        dyspnea = 1 if dyspnea_label.startswith("Yes") else 0
 
     with c3:
         chest_pain_label = st.selectbox(
-            "Nyeri Dada",
-            ["Tidak (0)", "Ya (1)"],
+            "Chest Pain",
+            ["No (0)", "Yes (1)"],
             index=0,
         )
-        chest_pain = 1 if chest_pain_label.startswith("Ya") else 0
+        chest_pain = 1 if chest_pain_label.startswith("Yes") else 0
 
         fever_label = st.selectbox(
-            "Demam",
-            ["Tidak (0)", "Ya (1)"],
+            "Fever",
+            ["No (0)", "Yes (1)"],
             index=0,
         )
-        fever = 1 if fever_label.startswith("Ya") else 0
+        fever = 1 if fever_label.startswith("Yes") else 0
 
         contact_label = st.selectbox(
-            "Riwayat Kontak",
-            ["Tidak (0)", "Ya (1)"],
+            "History of Contact",
+            ["No (0)", "Yes (1)"],
             index=0,
         )
-        history_contact = 1 if contact_label.startswith("Ya") else 0
+        history_contact = 1 if contact_label.startswith("Yes") else 0
 
     values = {
         "Age": age,
@@ -679,13 +679,13 @@ with tab_pred:
     input_df = prepare_input(values)
 
     st.markdown("---")
-    st.markdown("### Hasil prediksi")
+    st.markdown("### Prediction Result")
 
     if model is None:
         st.warning(
-            "Model belum dapat digunakan. Pastikan file "
+            "The model cannot be used. Make sure the file "
             "`Best_RandomForest_TB.pkl` berada di folder `model/` "
-            "dan dapat dibaca oleh environment Python saat ini."
+            "and can be read by the current Python environment."
         )
     else:
         pred, probability = predict_probability(input_df)
@@ -702,9 +702,9 @@ with tab_pred:
                 st.markdown(
                     """
                     <div class="risk-high">
-                        <div class="risk-title">⚠️ TERINDIKASI TB</div>
+                        <div class="risk-title">⚠️ TB INDICATED</div>
                         <div class="risk-sub">
-                            Model memprediksi kelas TB (Status_TB = 1).
+                            The model predicts the TB class (Status_TB = 1).
                         </div>
                     </div>
                     """,
@@ -716,7 +716,7 @@ with tab_pred:
                     <div class="risk-low">
                         <div class="risk-title">✅ NON-TB</div>
                         <div class="risk-sub">
-                            Model memprediksi kelas Non-TB (Status_TB = 0).
+                            The model predicts the Non-TB class (Status_TB = 0).
                         </div>
                     </div>
                     """,
@@ -726,27 +726,27 @@ with tab_pred:
         with prob_col:
             if risk_percent is not None:
                 st.metric(
-                    "Probabilitas TB",
+                    "TB Probability",
                     f"{risk_percent:.2f}%",
                 )
                 st.progress(min(max(probability, 0.0), 1.0))
 
                 if probability >= 0.5:
                     st.caption(
-                        "Probabilitas berada pada sisi kelas TB "
-                        "berdasarkan threshold prediksi model."
+                        "The probability falls on the TB class side "
+                        "based on the model prediction threshold."
                     )
                 else:
                     st.caption(
-                        "Probabilitas berada pada sisi kelas Non-TB "
-                        "berdasarkan threshold prediksi model."
+                        "The probability falls on the Non-TB class side "
+                        "based on the model prediction threshold."
                     )
             else:
-                st.info("Model tidak menyediakan `predict_proba`.")
+                st.info("The model does not provide `predict_proba`.")
 
         # SHAP individual
         st.markdown("---")
-        st.markdown("### 🔎 Penjelasan individual dengan SHAP")
+        st.markdown("### 🔎 Individual Explanation Using SHAP")
 
         shap_result, base_value = calculate_individual_shap(input_df)
 
@@ -759,10 +759,10 @@ with tab_pred:
                 x="SHAP",
                 y="Label",
                 orientation="h",
-                title="Kontribusi setiap fitur terhadap prediksi individu",
+                title="Contribution of Each Feature to the Individual Prediction",
                 labels={
-                    "SHAP": "Nilai SHAP",
-                    "Label": "Fitur",
+                    "SHAP": "SHAP Value",
+                    "Label": "Feature",
                 },
             )
             fig.update_layout(
@@ -784,7 +784,7 @@ with tab_pred:
             a, b = st.columns(2)
 
             with a:
-                st.markdown("#### ⬆️ Mendorong prediksi ke TB")
+                st.markdown("#### ⬆️ Pushes the Prediction Toward TB")
                 if len(pos):
                     for _, row in pos.head(5).iterrows():
                         st.write(
@@ -792,10 +792,10 @@ with tab_pred:
                             f"+{row['SHAP']:.4f}"
                         )
                 else:
-                    st.caption("Tidak ada kontribusi positif pada observasi ini.")
+                    st.caption("There is no positive contribution for this observation.")
 
             with b:
-                st.markdown("#### ⬇️ Menjauhkan prediksi dari TB")
+                st.markdown("#### ⬇️ Pushes the Prediction Away from TB")
                 if len(neg):
                     for _, row in neg.head(5).iterrows():
                         st.write(
@@ -803,26 +803,26 @@ with tab_pred:
                             f"{row['SHAP']:.4f}"
                         )
                 else:
-                    st.caption("Tidak ada kontribusi negatif pada observasi ini.")
+                    st.caption("There is no negative contribution for this observation.")
 
             if base_value is not None:
                 st.caption(
-                    f"Base value SHAP model: {base_value:.4f}. "
-                    "Nilai SHAP menunjukkan kontribusi relatif fitur "
-                    "terhadap keluaran model."
+                    f"Model SHAP base value: {base_value:.4f}. "
+                    "SHAP values represent the relative contribution of features "
+                    "to the model output."
                 )
 
         else:
             st.info(
-                "SHAP individual membutuhkan paket `shap` dan model "
-                "Random Forest yang dapat diproses oleh TreeExplainer."
+                "Individual SHAP requires the `shap` package and a Random Forest "
+                "model that can be processed by TreeExplainer."
             )
 
 # ============================================================
-# TAB 2 - ANALISIS MODEL
+# TAB 2 - MODEL ANALYSIS
 # ============================================================
 with tab_model:
-    st.markdown("### Performa Random Forest")
+    st.markdown("### Random Forest Performance")
 
     cols = st.columns(6)
     metric_items = list(METRICS.items())
@@ -841,8 +841,8 @@ with tab_model:
         cm_fig = go.Figure(
             data=go.Heatmap(
                 z=CONFUSION_MATRIX,
-                x=["Prediksi Non-TB", "Prediksi TB"],
-                y=["Aktual Non-TB", "Aktual TB"],
+                x=["Predicted Non-TB", "Predicted TB"],
+                y=["Actual Non-TB", "Actual TB"],
                 text=CONFUSION_MATRIX,
                 texttemplate="%{text}",
                 colorscale="Blues",
@@ -860,14 +860,14 @@ with tab_model:
 
         st.caption(
             "TN = 385, FP = 5, FN = 3, TP = 57. "
-            "Matriks berasal dari hasil evaluasi pada data uji 450 observasi."
+            "The matrix comes from evaluation results on 450 test observations."
         )
 
     with right:
         st.markdown("### Classification Report")
 
         report = pd.DataFrame({
-            "Kelas": ["Non-TB", "TB"],
+            "Class": ["Non-TB", "TB"],
             "Precision": [0.99, 0.92],
             "Recall": [0.99, 0.95],
             "F1-Score": [0.99, 0.93],
@@ -880,10 +880,10 @@ with tab_model:
             use_container_width=True,
         )
 
-        st.markdown("#### Konfigurasi model terbaik")
+        st.markdown("#### Best Model Configuration")
         params_df = pd.DataFrame(
             list(BEST_PARAMS.items()),
-            columns=["Parameter", "Nilai"],
+            columns=["Parameter", "Value"],
         )
         st.dataframe(
             params_df,
@@ -892,23 +892,23 @@ with tab_model:
         )
 
     st.markdown("---")
-    st.markdown("### Interpretasi performa")
+    st.markdown("### Performance Interpretation")
 
     st.info(
-        "Model mencapai accuracy 0.9822 dan ROC-AUC 0.9985. "
-        "Recall kelas TB sebesar 0.9500 menunjukkan model mampu "
-        "mengidentifikasi sebagian besar observasi TB pada data uji. "
-        "Dashboard menampilkan angka evaluasi yang sama dengan hasil penelitian."
+        "The model achieved an accuracy of 0.9822 and ROC-AUC of 0.9985. "
+        "A TB-class recall of 0.9500 indicates that the model can "
+        "identify most TB observations in the test data. "
+        "The dashboard displays the same evaluation metrics as the research results."
     )
 
 # ============================================================
-# TAB 3 - FAKTOR DOMINAN
+# TAB 3 - DOMINANT FACTORS
 # ============================================================
 with tab_shap:
-    st.markdown("### Faktor dominan berdasarkan SHAP")
+    st.markdown("### Dominant Factors Based on SHAP")
     st.caption(
-        "Nilai Mean Absolute SHAP menunjukkan besarnya kontribusi "
-        "rata-rata fitur terhadap prediksi model pada penelitian."
+        "Mean Absolute SHAP values indicate the magnitude of the average contribution "
+        "of each feature to the model predictions in the research."
     )
 
     dominant = SHAP_GLOBAL.iloc[0]
@@ -916,7 +916,7 @@ with tab_shap:
     st.markdown(
         f"""
         <div class="card">
-            <div class="metric-title">FAKTOR DOMINAN</div>
+            <div class="metric-title">DOMINANT FACTOR</div>
             <div class="metric-value">{feature_label(dominant["Feature"])}</div>
             <div class="small-note">
                 Mean Absolute SHAP = {dominant["Mean_Abs_SHAP"]:.6f}
@@ -939,7 +939,7 @@ with tab_shap:
         title="Mean Absolute SHAP",
         labels={
             "Mean_Abs_SHAP": "Mean Absolute SHAP",
-            "Label": "Fitur",
+            "Label": "Feature",
         },
     )
     fig.update_layout(
@@ -983,7 +983,7 @@ with tab_shap:
             title="RF Feature Importance",
             labels={
                 "RF_Importance": "Importance",
-                "Label": "Fitur",
+                "Label": "Feature",
             },
         )
         fig_rf.update_layout(
@@ -996,12 +996,12 @@ with tab_shap:
         st.plotly_chart(fig_rf, use_container_width=True)
 
     with right:
-        st.markdown("### Perbandingan RF vs SHAP")
+        st.markdown("### RF vs SHAP Comparison")
 
         table = comparison.copy()
         table["Feature"] = table["Feature"].map(feature_label)
         table.columns = [
-            "Fitur",
+            "Feature",
             "RF Importance",
             "Mean Absolute SHAP",
         ]
@@ -1014,15 +1014,15 @@ with tab_shap:
         )
 
     st.markdown("---")
-    st.markdown("### Kesimpulan interpretasi")
+    st.markdown("### Interpretation Summary")
 
     st.success(
-        "Symptom_Duration merupakan faktor paling dominan menurut SHAP "
-        "dengan Mean Absolute SHAP sebesar 0.286042. Urutan faktor "
-        "berikutnya adalah Chest_Pain, History_of_Contact, dan Ventilation."
+        "Symptom_Duration is the most dominant factor according to SHAP "
+        "with a Mean Absolute SHAP value of 0.286042. The next factors "
+        "are Chest_Pain, History_of_Contact, and Ventilation."
     )
 
     st.caption(
-        "Catatan: SHAP menjelaskan perilaku model, bukan membuktikan "
-        "hubungan sebab-akibat klinis."
+        "Note: SHAP explains model behavior and does not establish "
+        "clinical causal relationships."
     )
